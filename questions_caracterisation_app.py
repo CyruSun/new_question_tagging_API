@@ -24,22 +24,28 @@ app = Flask(__name__)
 
 # %%
 # finding and loading the module PATHS
-PCKG_PTH = os_path.abspath(os_path.join('./lib'))  # necessary absolute path
+PCKG_PATH = os_path.abspath(os_path.join('./lib'))  # necessary absolute path
+PCKG_PATH_NLP = os_path.abspath(\
+                    os_path.join('../natural_language_processing/'))
 
+ls_path = {PCKG_PATH, PCKG_PATH_NLP}
 print(f'module_path:')
-if PCKG_PTH not in sys.path:
-    sys.path.append(PCKG_PTH)
+
+for pckg in ls_path:
+    if PCKG_PATH not in sys.path:
+        sys.path.append(pckg)
 print()
 print(f"sys.path:\n{sys.path}\n")
 
 # %%
 # Import modules from added path
-from time_relate import timer
 import morphing as mrphng
 import data_cleaning_categorisation as clean
 
+from time_relate import timer
+from pre_processing_nlp import regex_tokenizer
+
 # %%
-# nltk.download('punkt')
 PATH_DATA = './data/'
 nan = NAN = np.nan  # WHoa!!
 advice = 'RESTART THE API AFTER USE !'
@@ -50,8 +56,8 @@ with open(PATH_DATA + 'st_match_words.pkl', 'rb') as p:
     st_match_words = pickle.load(p)
 with open(PATH_DATA + 'unwanted.pkl', 'rb') as p:
     unwanted = pickle.load(p)
-with open(PATH_DATA + 'tokenizer.pkl', 'rb') as p:
-    tokenizer = pickle.load(p)
+#with open(PATH_DATA + 'tokenizer.pkl', 'rb') as p:
+#    tokenizer = pickle.load(p)
 
 
 # %%
@@ -135,7 +141,7 @@ def result_tags():
 
 # %%
 def fill_df_matching_keywords(df_tofill, st_match_words=st_match_words,
-                              unwanted=unwanted, tokenizer=tokenizer):
+                              unwanted=unwanted, tokenizer=regex_tokenizer):
     """Pre-processing df until 'Matching_keywords'."""
     # Join the Title and Body strings
     df_tofill.loc[:, 'Joint_Question_Words'] = df_tofill.loc[
@@ -146,7 +152,7 @@ def fill_df_matching_keywords(df_tofill, st_match_words=st_match_words,
             body_str))
     # The all keywords
     df_tofill.loc[:, 'Question_Words'] = df_tofill[
-        'Joint_Question_Words'].apply(tokenizer.tokenize)
+        'Joint_Question_Words'].apply(tokenizer)
     # Convert all to lowercase
     df_tofill.loc[:, 'Question_Words'] = df_tofill[
         'Question_Words'].apply(lambda x: [elt.lower() for elt in x])
@@ -165,7 +171,7 @@ def fill_df_matching_keywords(df_tofill, st_match_words=st_match_words,
 
 # %%
 @timer
-def binarize_df(df_complete, tokenizer=tokenizer):
+def binarize_df(df_complete, tokenizer=regex_tokenizer):
     """Binarization of a dataframe.
     Keyword arguments:
     df_complete -- dataframe to encode
@@ -183,7 +189,7 @@ def binarize_df(df_complete, tokenizer=tokenizer):
 
     # The all keywords
     df_complete['Question_Words'] = df_complete[
-        'Joint_Question_Words'].apply(tokenizer.tokenize)
+        'Joint_Question_Words'].apply(tokenizer)
     # Delete the unwanted elements
     df_complete['Question_Words'] = df_complete['Question_Words'].apply(
             lambda x: {elmnt for elmnt in set(x) if elmnt not in unwanted})
@@ -238,7 +244,7 @@ def binarize_df(df_complete, tokenizer=tokenizer):
 
 # %%
 @app.route('/send', methods=['GET', 'POST'])
-def send(tokenizer=tokenizer):
+def send(tokenizer=regex_tokenizer):
     if request.method == 'POST':
         # loading
         with open(PATH_DATA + 'df_reduced_final.pkl', 'rb') as p:
@@ -289,7 +295,7 @@ def send(tokenizer=tokenizer):
 
         # tf-idf
         ls_joint_matching = [" ".join(ls) for ls in ls_matching]
-        tfidf = TfidfVectorizer(tokenizer=tokenizer.tokenize,
+        tfidf = TfidfVectorizer(tokenizer=tokenizer,
                                 stop_words=tfidf_stopwords)
         matrx_tfidf = tfidf.fit_transform(ls_joint_matching)
 
