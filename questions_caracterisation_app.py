@@ -100,7 +100,7 @@ class OneVsRestTagging:
             X_train, y_train = self.predictors, self.target_val
 
         # One vs Rest
-        ovr = OneVsRestClassifier(self.estimator, n_jobs=-1).fit(X_train,
+        ovr = OneVsRestClassifier(self.estimator, n_jobs=1).fit(X_train,
                                                                  y_train)
         self.proba = ovr.predict_proba(x_topredict)
 
@@ -296,7 +296,7 @@ def send(tokenizer=tokenizer):
         row, col = matrx_tfidf.shape
         tfidf_input = matrx_tfidf[-1]
 
-        rf = RandomForestClassifier(n_estimators=N_ESTIMATORS, n_jobs=-1,
+        rf = RandomForestClassifier(n_estimators=N_ESTIMATORS, n_jobs=1,
                                     max_depth=MAX_DEPTH)
         # ovr_tagging_rf = OneVsRestTagging(df_target, tfidf_input, rf)
         ovr_tagging_rf = OneVsRestTagging(df_encoded_complete, matrx_tfidf, rf)
